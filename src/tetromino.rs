@@ -1,6 +1,8 @@
-use super::{HEIGHT, WIDTH};
+use rand::seq::SliceRandom;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+use crate::game::{HEIGHT, WIDTH, PIECE_START_Y, PIECE_START_X};
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Tetromino {
     I(u8),
     J(u8),
@@ -11,7 +13,7 @@ pub enum Tetromino {
     Z(u8),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PositionedTetromino {
     t: Tetromino,
     y: i32,
@@ -19,9 +21,25 @@ pub struct PositionedTetromino {
 }
 
 impl PositionedTetromino {
-    pub fn new(t: Tetromino, y: i32, x: i32) -> Self {
-        Self { t, y, x }
+    pub fn spawn() -> Self {
+        let choices = vec![
+            Tetromino::I(0),
+            Tetromino::J(0),
+            Tetromino::L(0),
+            Tetromino::O,
+            Tetromino::S(0),
+            Tetromino::T(0),
+            Tetromino::Z(0),
+        ];
+        let mut piece = Self {
+            t: choices.choose(&mut rand::thread_rng()).unwrap().clone(),
+            y: PIECE_START_Y,
+            x: PIECE_START_X,
+        };
+        piece.move_up();  // Ensure it's in the topmost position
+        piece
     }
+
 
     // Change type of tetromino - used just for debugging.
     pub fn change(&mut self) {
@@ -86,6 +104,12 @@ impl PositionedTetromino {
         if !self.is_position_valid() {
             self.y -= 1;
         }
+    }
+
+    pub fn can_move_down(&self) -> bool {
+        let mut tmp = (*self).clone();
+        tmp.y += 1;
+        tmp.is_position_valid()
     }
 
     pub fn move_up(&mut self) {

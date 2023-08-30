@@ -18,7 +18,7 @@ use ratatui::{
     Terminal,
 };
 
-use tetris::Game;
+use tetris::game::Game;
 
 fn main() -> Result<(), io::Error> {
     enable_raw_mode()?;
