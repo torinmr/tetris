@@ -10,7 +10,7 @@ use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::widgets::block::Title;
 use game::{Command, Game, HEIGHT, WIDTH};
 
-use tetromino::{PositionedTetromino, Tetromino};
+use tetromino::{PositionedTetromino};
 
 mod tetromino;
 pub mod game;

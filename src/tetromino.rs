@@ -1,6 +1,7 @@
 use rand::seq::SliceRandom;
 
-use crate::game::{HEIGHT, WIDTH, PIECE_START_Y, PIECE_START_X};
+use crate::game::{Cell, GridType, PIECE_START_X, PIECE_START_Y};
+use crate::{HEIGHT, WIDTH};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tetromino {
@@ -21,23 +22,27 @@ pub struct PositionedTetromino {
 }
 
 impl PositionedTetromino {
-    pub fn spawn() -> Self {
+    pub fn spawn(board: &GridType) -> Option<Self> {
         let choices = vec![
             Tetromino::I(0),
-            Tetromino::J(0),
-            Tetromino::L(0),
-            Tetromino::O,
-            Tetromino::S(0),
-            Tetromino::T(0),
-            Tetromino::Z(0),
+            // Tetromino::J(0),
+            // Tetromino::L(0),
+            // Tetromino::O,
+            // Tetromino::S(0),
+            // Tetromino::T(0),
+            // Tetromino::Z(0),
         ];
         let mut piece = Self {
             t: choices.choose(&mut rand::thread_rng()).unwrap().clone(),
             y: PIECE_START_Y,
             x: PIECE_START_X,
         };
-        piece.move_up();  // Ensure it's in the topmost position
-        piece
+        piece.move_up(board);  // Ensure it's in the topmost position
+        if piece.is_position_valid(board) {
+            Some(piece)
+        } else {
+            None
+        }
     }
 
 
@@ -56,17 +61,18 @@ impl PositionedTetromino {
         self.x = 5;
     }
 
-    fn is_position_valid(&self) -> bool {
-        for (y, x) in &self.get_coords() {
-            if y < &0 || y >= &HEIGHT || x < &0 || x >= &WIDTH {
+    fn is_position_valid(&self, board: &GridType) -> bool {
+        for (y, x) in self.get_coords() {
+            if y < 0 || y >= HEIGHT || x < 0 || x >= WIDTH
+                || board[y as usize][x as usize] != Cell::Empty {
                 return false;
             }
         }
-        return true;
+        true
     }
 
-    pub fn rotate_cw(&mut self) {
-        let old_t = self.t;
+    pub fn rotate_cw(&mut self, board: &GridType) {
+        let old_t = self.t.clone();
         self.t = match self.t {
             Tetromino::I(r) => Tetromino::I((r + 1) % 2),
             Tetromino::J(r) => Tetromino::J((r + 1) % 4),
@@ -77,13 +83,13 @@ impl PositionedTetromino {
             Tetromino::Z(r) => Tetromino::Z((r + 1) % 2),
         };
 
-        if !self.is_position_valid() {
+        if !self.is_position_valid(board) {
             self.t = old_t;
         }
     }
 
-    pub fn rotate_ccw(&mut self) {
-        let old_t = self.t;
+    pub fn rotate_ccw(&mut self, board: &GridType) {
+        let old_t = self.t.clone();
         self.t = match self.t {
             Tetromino::I(r) => Tetromino::I((r + 1) % 2),
             Tetromino::J(r) => Tetromino::J((r + 3) % 4),
@@ -94,41 +100,41 @@ impl PositionedTetromino {
             Tetromino::Z(r) => Tetromino::Z((r + 1) % 2),
         };
 
-         if !self.is_position_valid() {
+        if !self.is_position_valid(board) {
             self.t = old_t;
         }
     }
 
-    pub fn move_down(&mut self) {
+    pub fn move_down(&mut self, board: &GridType) {
         self.y += 1;
-        if !self.is_position_valid() {
+        if !self.is_position_valid(board) {
             self.y -= 1;
         }
     }
 
-    pub fn can_move_down(&self) -> bool {
+    pub fn can_move_down(&self, board: &GridType) -> bool {
         let mut tmp = (*self).clone();
         tmp.y += 1;
-        tmp.is_position_valid()
+        tmp.is_position_valid(board)
     }
 
-    pub fn move_up(&mut self) {
+    pub fn move_up(&mut self, board: &GridType) {
         self.y -= 1;
-        if !self.is_position_valid() {
+        if !self.is_position_valid(board) {
             self.y += 1;
         }
     }
 
-    pub fn move_left(&mut self) {
+    pub fn move_left(&mut self, board: &GridType) {
         self.x -= 1;
-        if !self.is_position_valid() {
+        if !self.is_position_valid(board) {
             self.x += 1;
         }
     }
 
-    pub fn move_right(&mut self) {
+    pub fn move_right(&mut self, board: &GridType) {
         self.x += 1;
-        if !self.is_position_valid() {
+        if !self.is_position_valid(board) {
             self.x -= 1;
         }
     }
