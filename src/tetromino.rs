@@ -1,7 +1,7 @@
 use rand::seq::SliceRandom;
 
-use crate::game::{Cell, GridType, PIECE_START_X, PIECE_START_Y};
 use crate::{HEIGHT, WIDTH};
+use crate::game::{Cell, GridType, PIECE_START_X, PIECE_START_Y};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tetromino {
@@ -25,12 +25,12 @@ impl PositionedTetromino {
     pub fn spawn(board: &GridType) -> Option<Self> {
         let choices = vec![
             Tetromino::I(0),
-            // Tetromino::J(0),
-            // Tetromino::L(0),
-            // Tetromino::O,
-            // Tetromino::S(0),
-            // Tetromino::T(0),
-            // Tetromino::Z(0),
+            Tetromino::J(0),
+            Tetromino::L(0),
+            Tetromino::O,
+            Tetromino::S(0),
+            Tetromino::T(0),
+            Tetromino::Z(0),
         ];
         let mut piece = Self {
             t: choices.choose(&mut rand::thread_rng()).unwrap().clone(),
