@@ -11,7 +11,7 @@ pub type NextPiece = [[Cell; 4]; 2];
 
 pub const PIECE_START_Y: i32 = 1;
 pub const PIECE_START_X: i32 = 5;
-const DROP_INTERVAL: Duration = Duration::from_millis(500);
+const INITIAL_DROP_INTERVAL: Duration = Duration::from_millis(500);
 
 #[derive(Debug, PartialEq)]
 pub struct Game {
@@ -20,6 +20,8 @@ pub struct Game {
     active_piece: Option<PositionedTetromino>,
     next_piece: Tetromino,
     last_drop: Instant,
+    score: i32,
+    drop_interval: Duration,
 }
 
 impl Game {
@@ -32,6 +34,8 @@ impl Game {
             active_piece: PositionedTetromino::place(&first_piece, &settled_pieces),
             next_piece: Tetromino::new(Some(&first_piece)),
             last_drop: Instant::now(),
+            score: 0,
+            drop_interval: INITIAL_DROP_INTERVAL,
         }
     }
 
@@ -48,7 +52,7 @@ impl Game {
                 _ => (),
             };
 
-            if self.last_drop.elapsed() >= DROP_INTERVAL {
+            if self.last_drop.elapsed() >= self.drop_interval {
                 if active_piece.can_move_down(&self.settled_pieces) {
                     active_piece.move_down(&self.settled_pieces);
                 } else {
@@ -66,7 +70,7 @@ impl Game {
                         self.debug_msg = String::from("You lost!");
                     }
                 }
-                self.last_drop += DROP_INTERVAL;
+                self.last_drop += self.drop_interval;
             }
         }
     }
@@ -92,10 +96,22 @@ impl Game {
         }
 
         match num_cleared {
-            1 => self.debug_msg = String::from("Good job!"),
-            2 => self.debug_msg = String::from("Wow!"),
-            3 => self.debug_msg = String::from("That's amazing!"),
-            4 => self.debug_msg = String::from("TETRIS!!!!"),
+            1 => {
+                self.debug_msg = String::from("Good job!");
+                self.increase_score(100);
+            }
+            2 => {
+                self.debug_msg = String::from("Wow!");
+                self.increase_score(300);
+            }
+            3 => {
+                self.debug_msg = String::from("That's amazing!");
+                self.increase_score(500);
+            }
+            4 => {
+                self.debug_msg = String::from("TETRIS!!!!");
+                self.increase_score(800);
+            }
             _ => self.debug_msg = String::from("You can do it!")
         };
     }
@@ -109,6 +125,14 @@ impl Game {
         }
         for x in 0..WIDTH {
             self.settled_pieces[0][x as usize] = Cell::Empty;
+        }
+    }
+
+    fn increase_score(&mut self, points: i32) {
+        let old_score = self.score;
+        self.score += points;
+        if self.score / 1000 > old_score / 1000 {
+            self.drop_interval = (self.drop_interval * 8) / 10;
         }
     }
 
@@ -138,10 +162,11 @@ impl Game {
         grid
     }
 
-
     pub fn render_message(&self) -> &str {
         self.debug_msg.as_str()
     }
+
+    pub fn render_score(&self) -> i32 { self.score }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

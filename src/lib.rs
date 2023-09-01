@@ -102,16 +102,28 @@ fn render<B: Backend>(f: &mut Frame<B>, game: &Game) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(4),
+            Constraint::Length(3),
             Constraint::Min(0),
         ].as_ref())
         .split(game_area[1]);
+
     let next_piece = Paragraph::new(
         render_next_piece_to_text(game.render_next_piece())
     ).block(Block::default()
         .title("Next")
+        .title_alignment(Alignment::Center)
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded));
     f.render_widget(next_piece, side_bar[0]);
+
+    let score = Paragraph::new(format!("{}", game.render_score()))
+        .alignment(Alignment::Right)
+        .block(Block::default()
+            .title("Score")
+            .title_alignment(Alignment::Center)
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded));
+    f.render_widget(score, side_bar[1]);
 }
 
 pub fn run_game<B: Backend>(
