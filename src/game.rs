@@ -1,31 +1,36 @@
 use std::time::{Duration, Instant};
 
 use crate::PositionedTetromino;
+use crate::tetromino::Tetromino;
 
 pub const HEIGHT: i32 = 20;
 pub const WIDTH: i32 = 10;
 
-pub type GridType = [[Cell; WIDTH as usize]; HEIGHT as usize];
+pub type Board = [[Cell; WIDTH as usize]; HEIGHT as usize];
+pub type NextPiece = [[Cell; 4]; 2];
 
 pub const PIECE_START_Y: i32 = 1;
 pub const PIECE_START_X: i32 = 5;
-const DROP_INTERVAL: Duration = Duration::from_millis(750);
+const DROP_INTERVAL: Duration = Duration::from_millis(500);
 
 #[derive(Debug, PartialEq)]
 pub struct Game {
     debug_msg: String,
-    settled_pieces: GridType,
+    settled_pieces: Board,
     active_piece: Option<PositionedTetromino>,
+    next_piece: Tetromino,
     last_drop: Instant,
 }
 
 impl Game {
     pub fn new() -> Self {
         let settled_pieces = [[Cell::Empty; WIDTH as usize]; HEIGHT as usize];
+        let first_piece = Tetromino::new(None);
         Self {
             debug_msg: String::from("Welcome to Tetris!"),
             settled_pieces,
-            active_piece: PositionedTetromino::spawn(&settled_pieces),
+            active_piece: PositionedTetromino::place(&first_piece, &settled_pieces),
+            next_piece: Tetromino::new(Some(&first_piece)),
             last_drop: Instant::now(),
         }
     }
@@ -48,10 +53,15 @@ impl Game {
                     active_piece.move_down(&self.settled_pieces);
                 } else {
                     for (y, x) in active_piece.get_coords() {
-                        self.settled_pieces[y as usize][x as usize] = Cell::InactiveBlock;
+                        self.settled_pieces[y as usize][x as usize] = active_piece.get_cell_type();
                     }
                     self.clear_full_rows();
-                    self.active_piece = PositionedTetromino::spawn(&self.settled_pieces);
+
+                    self.active_piece = PositionedTetromino::place(
+                        &self.next_piece, &self.settled_pieces,
+                    );
+                    self.next_piece = Tetromino::new(Some(&self.next_piece));
+
                     if self.active_piece == None {
                         self.debug_msg = String::from("You lost!");
                     }
@@ -67,7 +77,7 @@ impl Game {
             loop {
                 let mut row_full = true;
                 for x in 0..WIDTH {
-                    if self.settled_pieces[y as usize][x as usize] != Cell::InactiveBlock {
+                    if self.settled_pieces[y as usize][x as usize] == Cell::Empty {
                         row_full = false;
                         break;
                     }
@@ -102,29 +112,34 @@ impl Game {
         }
     }
 
-    pub fn render_text(&self) -> String {
-        let mut output = String::new();
+    pub fn render_board(&self) -> Board {
         let mut board = self.settled_pieces.clone();
         if let Some(ref active_piece) = self.active_piece {
+            let mut preview_piece = active_piece.clone();
+            while preview_piece.can_move_down(&self.settled_pieces) {
+                preview_piece.move_down(&self.settled_pieces);
+            }
+            for (y, x) in preview_piece.get_coords() {
+                board[y as usize][x as usize] = preview_piece.get_ghost_cell_type();
+            }
+
             for (y, x) in active_piece.get_coords() {
-                board[y as usize][x as usize] = Cell::ActiveBlock;
+                board[y as usize][x as usize] = active_piece.get_cell_type();
             }
         }
-        for row in board {
-            for cell in row {
-                match cell {
-                    Cell::Empty => output.push_str("  "),
-                    Cell::InactiveBlock => output.push_str("██"),
-                    Cell::ActiveBlock => output.push_str("██"),
-                }
-            }
-            output.push('\n');
+        board
+    }
+
+    pub fn render_next_piece(&self) -> [[Cell; 4]; 2] {
+        let mut grid = [[Cell::Empty; 4]; 2];
+        for (y, x) in self.next_piece.get_preview_coords() {
+            grid[y as usize][x as usize] = self.next_piece.get_cell_type();
         }
-        output
+        grid
     }
 
 
-    pub fn get_message(&self) -> &str {
+    pub fn render_message(&self) -> &str {
         self.debug_msg.as_str()
     }
 }
@@ -132,8 +147,20 @@ impl Game {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Cell {
     Empty,
-    ActiveBlock,
-    InactiveBlock,
+    IBlock,
+    JBlock,
+    LBlock,
+    OBlock,
+    SBlock,
+    TBlock,
+    ZBlock,
+    IGhostBlock,
+    JGhostBlock,
+    LGhostBlock,
+    OGhostBlock,
+    SGhostBlock,
+    TGhostBlock,
+    ZGhostBlock,
 }
 
 #[derive(Debug, PartialEq)]
